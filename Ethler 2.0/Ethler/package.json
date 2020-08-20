@@ -1,0 +1,27 @@
+{
+  "name": "ethler",
+  "version": "2.0.0",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Sounak Bhowmik",
+  "license": "ISC",
+  "dependencies": {
+    "truffle-hdwallet-provider": "^1.0.17"
+  },
+  "devDependencies": {},
+  "description": "a decentralised betting application",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sounak132/Ethler201.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sounak132/Ethler201/issues"
+  },
+  "homepage": "https://github.com/Sounak132/Ethler201#readme"
+}
