@@ -19,6 +19,11 @@ contract Ethler is Ownable, usingProvable{
     mapping (address => uint) public BalanceSheet;
     mapping (address => bool) public waitingStatus;
 
+    modifier costs(uint value){
+      require(msg.value >= value);
+      _;
+    }
+
     event statusOfCalledBackPlayer(address indexed Player, bool status);
 
 // part  of callback function
@@ -27,9 +32,15 @@ contract Ethler is Ownable, usingProvable{
         contractBalance -= bet;
     }
 
+    constructor()public{
+      provable_setProof(proofType_Ledger);
+      update();
+    }
+
 // function after the flip button
-    function Play(uint Input)payable public {
+    function Play(uint Input)payable public costs(0.001 ether){
       require(waitingStatus[msg.sender] == false, "You are already in a game");
+      require(Input === 0 || Input === 1, "Input was not valid");
 
       // updating player status
       waitingStatus[msg.sender] = true;
@@ -55,24 +66,26 @@ contract Ethler is Ownable, usingProvable{
 
     function __callback(bytes32 _queryId, string memory _result, bytes memory _proof) public{
         require(msg.sender == provable_cbAddress());
-        uint256 randomNumber = uint256(keccak256(abi.encodePacked(_result))) % 2;
+        if (provable_randomDS_proofVerify__returnCode(_queryId, _result, _proof)!= 0) {/*doing nothing*/}
+        else {
+          uint256 randomNumber = uint256(keccak256(abi.encodePacked(_result))) % 2;
 
-         // theWaitingPlyer = waiting[_queryId];
+           // theWaitingPlyer = waiting[_queryId];
 
-        // retrieving data from struct
+          // retrieving data from struct
 
-        bool status = waiting[_queryId].choice == randomNumber;
-        address waitingPlayerAddress = waiting[_queryId].Player;
-        uint val = waiting[_queryId].value;
+          bool status = waiting[_queryId].choice == randomNumber;
+          address waitingPlayerAddress = waiting[_queryId].Player;
+          uint val = waiting[_queryId].value;
 
-        // in case of win update the BalanceSheet
-        if(status) updatePlayerBalance(waitingPlayerAddress, val);
+          // in case of win update the BalanceSheet
+          if(status) updatePlayerBalance(waitingPlayerAddress, val);
 
-        // updating status of the player
-        waitingStatus[waitingPlayerAddress] = false;
-        delete waiting[_queryId];
-        //emitting event
-        emit statusOfCalledBackPlayer(waitingPlayerAddress, status);
+          // updating status of the player
+          waitingStatus[waitingPlayerAddress] = false;
+          delete waiting[_queryId];
+          //emitting event
+          emit statusOfCalledBackPlayer(waitingPlayerAddress, status);
     }
 
 // Your balance button
@@ -89,9 +102,13 @@ contract Ethler is Ownable, usingProvable{
     }
 
 // for owner to withdraw the smart contract funds
-    function withdrawAll()public Owned returns(uint toTransfer){
-        toTransfer = contractBalance;
-        contractBalance = 0;
-        msg.sender.transfer(toTransfer);
+    function withdrawAll()public isOwned {
+      uint toTransfer = address(this).balance;
+      contractBalance -= toTransfer;
+      msg.sender.transfer(toTransfer);
+    }
+// for cash deposition by the owner
+    function Deosit()public isOwned payable costs(1 ether){
+      contractBalance+= msg.value;
     }
 }
