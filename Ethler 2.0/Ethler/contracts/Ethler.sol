@@ -34,13 +34,13 @@ contract Ethler is Ownable, usingProvable{
 
     constructor()public{
       provable_setProof(proofType_Ledger);
-      update();
+      Play(1);  //this function reqires ether, but we are not sending any
     }
 
 // function after the flip button
     function Play(uint Input)payable public costs(0.001 ether){
       require(waitingStatus[msg.sender] == false, "You are already in a game");
-      require(Input === 0 || Input === 1, "Input was not valid");
+      require(Input == 0 || Input == 1, "Input was not valid");
 
       // updating player status
       waitingStatus[msg.sender] = true;
@@ -86,6 +86,7 @@ contract Ethler is Ownable, usingProvable{
           delete waiting[_queryId];
           //emitting event
           emit statusOfCalledBackPlayer(waitingPlayerAddress, status);
+        }
     }
 
 // Your balance button
