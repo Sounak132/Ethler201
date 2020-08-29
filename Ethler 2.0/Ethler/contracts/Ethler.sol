@@ -26,19 +26,30 @@ contract Ethler is Ownable, usingProvable{
 
     event statusOfCalledBackPlayer(address indexed Player, bool status);
 
+    constructor()public payable{
+      provable_setProof(proofType_Ledger);
+      update();
+    }
 // part  of callback function
     function updatePlayerBalance(address Player, uint bet)private {
         BalanceSheet[Player] += bet*2;
         contractBalance -= bet;
     }
 
-    constructor()public{
-      provable_setProof(proofType_Ledger);
-      Play(1);  //this function reqires ether, but we are not sending any
+    function update()public payable returns(bytes32){
+      uint256 QUERY_EXECUTION_DELAY = 0;
+      uint256 GAS_FOR_CALLBACK = 200000;
+
+      bytes32 queryId = provable_newRandomDSQuery(
+          QUERY_EXECUTION_DELAY,
+          NUM_RANDOM_BYTES_REQUESTED,
+          GAS_FOR_CALLBACK
+      );
+      return queryId;
     }
 
 // function after the flip button
-    function Play(uint Input)payable public costs(0.001 ether){
+    function Play(uint Input)public payable costs(0.001 ether){
       require(waitingStatus[msg.sender] == false, "You are already in a game");
       require(Input == 0 || Input == 1, "Input was not valid");
 
@@ -52,22 +63,14 @@ contract Ethler is Ownable, usingProvable{
 
       // update contract balance
       contractBalance += msg.value;
-      uint256 QUERY_EXECUTION_DELAY = 0;
-      uint256 GAS_FOR_CALLBACK = 200000;
-
-      bytes32 queryId = provable_newRandomDSQuery(
-          QUERY_EXECUTION_DELAY,
-          NUM_RANDOM_BYTES_REQUESTED,
-          GAS_FOR_CALLBACK
-      );
+      bytes32 queryId = update();
 
       waiting[queryId] = newbet;
     }
 
     function __callback(bytes32 _queryId, string memory _result, bytes memory _proof) public{
         require(msg.sender == provable_cbAddress());
-        if (provable_randomDS_proofVerify__returnCode(_queryId, _result, _proof)!= 0) {/*doing nothing*/}
-        else {
+        if (provable_randomDS_proofVerify__returnCode(_queryId, _result, _proof) == 0) {
           uint256 randomNumber = uint256(keccak256(abi.encodePacked(_result))) % 2;
 
            // theWaitingPlyer = waiting[_queryId];
